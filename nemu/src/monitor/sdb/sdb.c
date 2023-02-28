@@ -68,30 +68,82 @@ static int cmd_info(char *args){
   return 0;
 }
 
-static int cmd_x(char *args){
-  char *arg = strtok(NULL, " ");
-  int n = -1;
-  bool success = true;
-  paddr_t base = 0x80000000; 
-  sscanf(arg, "%d", &n); //对于n不支持表达式，只支持常量。
-  arg = args + strlen(arg) + 1;
-  sscanf(arg, "%i", &base);
-  // base = expr(arg, &success);
-  if (!success) {
+// 不用0x80000000也可以
+// static int cmd_x(char *args){
+//   char *arg = strtok(NULL, " ");
+//   int n = -1;
+//   bool success = true;
+//   paddr_t base = 0x80000000; 
+//   sscanf(arg, "%d", &n); //对于n不支持表达式，只支持常量。
+//   arg = args + strlen(arg) + 1;
+//   sscanf(arg, "%i", &base);
+//   // base = expr(arg, &success);
+//   if (!success) {
+//     return 0;
+//   }
+//   for (int i = 0; i < n; ++i){
+//     if (i % 4 == 0){
+//       printf ("\n\e[1;36m%#x: \e[0m\t", base + i * 4);
+//     }
+//     for (int j = 0; j < 4; ++j){
+//       uint8_t* pos = guest_to_host(base + i * 4 + j);
+//       printf("%.2x ", *pos);
+//     }
+//     printf("\t");
+//   }
+//   printf("\n");
+//   return 0;
+// }
+
+// 必须为 x 10 0x80000000
+static int cmd_x(char *args) {
+  char* s_num1 = strtok(NULL, " ");
+  if (s_num1 == NULL) {
     return 0;
   }
-  
-  for (int i = 0; i < n; ++i){
-    if (i % 4 == 0){
-      printf ("\n\e[1;36m%#x: \e[0m\t", base + i * 4);
-    }
-    for (int j = 0; j < 4; ++j){
-      uint8_t* pos = guest_to_host(base + i * 4 + j);
-      printf("%.2x ", *pos);
-    }
-    printf("\t");
+  int num1 = atoi(s_num1);
+  char* s_num2 = strtok(NULL, " ");
+  if (s_num2 == NULL) {
+    return 0;
   }
-  printf("\n");
+  if (strlen(s_num2) <= 2) {
+    panic("请以0x开头!\n");
+  }
+  paddr_t addr = (paddr_t)strtol(s_num2+2, NULL, 16);
+  printf("%s\t\t%-34s%-32s\n", "addr", "16进制", "10进制");
+  printf("%s:\t", s_num2);
+  for (int i = 1; i <= num1<<2; i++) {
+    if (i%4 != 0) {
+      printf("0x%-4x ", paddr_read(addr + i - 1, 1));
+    } else {
+      printf("0x%-4x\t", paddr_read(addr + i - 1, 1));
+      for (int j = i - 3; j <= i; j++) {
+        printf("%-4d ", paddr_read(addr + j - 1, 1));
+      }
+      printf("\n");
+      if (i == num1<<2) {
+        printf("\n");
+      } else {
+        printf("0x%x:\t", addr + i);
+      }
+    }
+  }
+  return 0;
+}
+
+static int cmd_px(char *args){
+  bool success;
+  uint32_t v = expr(args, &success);
+  if (success)
+    printf("%s = \e[1;36m%#.8x\e[0m\n", args, v);
+  return 0;
+}
+
+static int cmd_p(char *args){
+  bool success;
+  uint32_t v = expr(args, &success);
+  if (success)
+    printf("%s = \e[1;36m%u\e[0m\n", args, v);
   return 0;
 }
 
@@ -118,11 +170,11 @@ static struct {
   { "si", "si [N] 让程序单步执行N条指令后暂停执行,当N没有给出时, 缺省为1", cmd_si},
   { "info", "info r 打印寄存器状态, info w 打印监视点信息", cmd_info},
   { "x", "x N EXPR 求出表达式EXPR的值, 将结果作为起始内存地址, 以十六进制形式输出连续的N个4字节", cmd_x},
-  // { "p", "p EXPR 求出表达式EXPR的值", cmd_p},
+  { "p", "p EXPR 求出表达式EXPR的值", cmd_p},
   // { "w", "w EXPR 当表达式EXPR的值发生变化时, 暂停程序执行", cmd_w},
   // { "d", "d N 删除序号为N的监视点", cmd_d},
   // { "s", "s 打印当前函数调用栈", cmd_s},
-  // { "px", "功能同p，但是以十六进制输出结果", cmd_px}
+  { "px", "功能同p，但是以十六进制输出结果", cmd_px}
 };
 
 #define NR_CMD ARRLEN(cmd_table)
