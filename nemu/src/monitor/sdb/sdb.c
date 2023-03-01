@@ -147,6 +147,24 @@ static int cmd_p(char *args){
   return 0;
 }
 
+static int cmd_w(char *args){
+  bool success = true;
+  WP *point = new_wp(args, &success);
+  if (!success){
+    printf("Some thing wrong happend.\n");
+  }else {
+    printf("Created a \e[1;36mWatchPoint(NO.%d)\e[0m: %s \n", point->NO, point->condation);
+  }
+  return 0;
+}
+
+static int cmd_d(char *args){
+  int NO;
+  sscanf(args, "%d", &NO);
+  free_wp(NO);
+  return 0;
+}
+
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;
@@ -171,8 +189,8 @@ static struct {
   { "info", "info r 打印寄存器状态, info w 打印监视点信息", cmd_info},
   { "x", "x N EXPR 求出表达式EXPR的值, 将结果作为起始内存地址, 以十六进制形式输出连续的N个4字节", cmd_x},
   { "p", "p EXPR 求出表达式EXPR的值", cmd_p},
-  // { "w", "w EXPR 当表达式EXPR的值发生变化时, 暂停程序执行", cmd_w},
-  // { "d", "d N 删除序号为N的监视点", cmd_d},
+  { "w", "w EXPR 当表达式EXPR的值发生变化时, 暂停程序执行", cmd_w},
+  { "d", "d N 删除序号为N的监视点", cmd_d},
   // { "s", "s 打印当前函数调用栈", cmd_s},
   { "px", "功能同p，但是以十六进制输出结果", cmd_px}
 };
