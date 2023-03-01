@@ -59,3 +59,7 @@ else
 # Include rules to build NEMU
 include $(NEMU_HOME)/scripts/native.mk
 endif
+
+.PHONY : count
+count :
+	@echo "NEMU当前C代码行数: `find . -regex ".*\.[c,h]" | xargs cat | wc -l`行"
